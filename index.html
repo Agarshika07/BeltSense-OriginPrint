@@ -1,0 +1,1211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BeltSense — Origin Print · Splice Monitoring Simulation</title>
+<style>
+:root{
+  --bg:#10141a;
+  --bg-alt:#0c0f13;
+  --panel:#171d24;
+  --panel-2:#1c232b;
+  --border:#2a323c;
+  --border-soft:#232a32;
+  --steel:#4c5764;
+  --text:#e7ecf0;
+  --text-dim:#93a1ad;
+  --text-faint:#5f6b76;
+  --cyan:#4fd6e8;
+  --cyan-dim:#2c7c8a;
+  --cyan-glow: rgba(79,214,232,0.35);
+  --amber:#e3a63d;
+  --amber-glow: rgba(227,166,61,0.3);
+  --red:#e15b52;
+  --red-glow: rgba(225,91,82,0.32);
+  --green:#57cf96;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  --sans: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--sans);}
+body{
+  background-image:
+    linear-gradient(var(--border-soft) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border-soft) 1px, transparent 1px);
+  background-size: 42px 42px;
+  background-attachment: fixed;
+  min-height:100vh;
+}
+::selection{background:var(--cyan-glow);}
+button{font-family:var(--sans);cursor:pointer;}
+h1,h2,h3,p{margin:0;}
+
+/* ---------- START SCREEN ---------- */
+#startScreen{
+  position:fixed; inset:0; z-index:50;
+  display:flex; align-items:center; justify-content:center; flex-direction:column;
+  background: radial-gradient(ellipse at 50% 30%, #171f27 0%, #0b0e12 70%);
+  text-align:center; padding:24px;
+}
+.start-mark{
+  width:64px;height:64px;margin-bottom:28px;
+  border:1.5px solid var(--cyan-dim); border-radius:2px;
+  display:flex;align-items:center;justify-content:center;position:relative;
+}
+.start-mark::before,.start-mark::after{
+  content:""; position:absolute; background:var(--cyan);
+}
+.start-mark::before{ width:2px; height:26px; top:19px; left:31px; opacity:0.8;}
+.start-mark::after{ width:26px; height:2px; left:19px; top:31px; opacity:0.8;}
+.start-mark span{
+  width:10px;height:10px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 14px 3px var(--cyan-glow);
+}
+.brand{
+  font-family:var(--mono); letter-spacing:0.32em; font-size:14px; color:var(--text-dim);
+  margin-bottom:10px;
+}
+.wordmark{
+  font-size:clamp(40px,8vw,74px); font-weight:600; letter-spacing:0.04em; color:var(--text);
+  line-height:1;
+}
+.origin-print-label{
+  margin-top:18px; font-family:var(--mono); font-size:13px; letter-spacing:0.3em; color:var(--cyan);
+  text-transform:uppercase;
+}
+.tagline{
+  margin-top:6px; color:var(--text-dim); font-size:15px; max-width:420px;
+}
+.motto{
+  margin-top:44px; font-size:clamp(18px,3vw,26px); font-weight:600; letter-spacing:0.05em;
+  color:var(--text); max-width:640px; line-height:1.4;
+}
+.motto span{color:var(--cyan);}
+#startBtn{
+  margin-top:44px; padding:16px 38px; font-size:15px; letter-spacing:0.14em;
+  background:var(--cyan); color:#062227; border:none; border-radius:3px; font-weight:700;
+  box-shadow:0 0 0 1px var(--cyan-dim), 0 18px 40px -12px var(--cyan-glow);
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+#startBtn:hover{ transform:translateY(-1px); box-shadow:0 0 0 1px var(--cyan), 0 20px 46px -10px var(--cyan-glow);}
+#startBtn:active{ transform:translateY(0px);}
+.start-foot{
+  position:absolute; bottom:22px; font-family:var(--mono); font-size:11px; color:var(--text-faint);
+  letter-spacing:0.08em; max-width:640px; padding:0 20px;
+}
+
+/* ---------- APP SHELL ---------- */
+#app{display:none; max-width:1180px; margin:0 auto; padding:20px 20px 80px;}
+#app.visible{display:block;}
+
+.topbar{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:14px 18px; border:1px solid var(--border); border-radius:6px; background:var(--panel);
+  margin-bottom:16px; flex-wrap:wrap;
+}
+.topbar-left{display:flex; align-items:center; gap:12px;}
+.logo-dot{width:9px;height:9px;border-radius:50%;background:var(--cyan); box-shadow:0 0 10px 2px var(--cyan-glow);}
+.topbar-title{font-weight:700; letter-spacing:0.12em; font-size:15px;}
+.topbar-sub{font-family:var(--mono); font-size:11px; color:var(--text-faint); letter-spacing:0.08em;}
+.status-pill{
+  font-family:var(--mono); font-size:11px; letter-spacing:0.08em; padding:6px 12px;
+  border-radius:20px; border:1px solid var(--border); color:var(--text-dim); display:flex; align-items:center; gap:8px;
+}
+.status-pill .dot{width:7px;height:7px;border-radius:50%; background:var(--text-faint);}
+.status-pill.normal{color:var(--green); border-color:rgba(87,207,150,0.35);} .status-pill.normal .dot{background:var(--green); box-shadow:0 0 8px 2px rgba(87,207,150,0.5);}
+.status-pill.watch{color:var(--amber); border-color:rgba(227,166,61,0.4);} .status-pill.watch .dot{background:var(--amber); box-shadow:0 0 8px 2px var(--amber-glow);}
+.status-pill.inspect{color:var(--red); border-color:rgba(225,91,82,0.45);} .status-pill.inspect .dot{background:var(--red); box-shadow:0 0 8px 2px var(--red-glow);}
+
+.panel{
+  border:1px solid var(--border); border-radius:6px; background:var(--panel);
+  padding:18px 20px; margin-bottom:16px; position:relative;
+}
+.panel-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap; gap:8px;}
+.panel-title{font-family:var(--mono); font-size:12px; letter-spacing:0.16em; color:var(--text-dim); text-transform:uppercase;}
+.panel-note{font-size:11px; color:var(--text-faint); font-family:var(--mono);}
+
+/* ---------- CONVEYOR ---------- */
+.conveyor-wrap{position:relative;}
+#conveyorCanvas{width:100%; height:220px; display:block; border-radius:4px; background:var(--bg-alt); border:1px solid var(--border-soft);}
+.detect-flag{
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  font-family:var(--mono); font-size:11px; letter-spacing:0.14em; padding:5px 12px;
+  border-radius:3px; background:rgba(79,214,232,0.12); color:var(--cyan); border:1px solid var(--cyan-dim);
+  opacity:0; transition:opacity .15s ease;
+}
+.detect-flag.on{opacity:1;}
+.pass-counter{
+  position:absolute; top:12px; right:14px; font-family:var(--mono); font-size:11px; color:var(--text-dim);
+  letter-spacing:0.05em;
+}
+.sensor-legend{ display:flex; gap:18px; margin-top:12px; flex-wrap:wrap;}
+.sensor-legend .item{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text-dim); font-family:var(--mono);}
+.sensor-legend .swatch{width:9px;height:9px;border-radius:2px;}
+
+/* ---------- CALIBRATION ---------- */
+.calib-row{display:flex; align-items:center; gap:20px; flex-wrap:wrap;}
+.btn{
+  padding:11px 20px; border-radius:4px; border:1px solid var(--border); background:var(--panel-2);
+  color:var(--text); font-size:13px; letter-spacing:0.05em; font-weight:600; transition:all .15s ease;
+}
+.btn:hover{border-color:var(--steel); background:#232b34;}
+.btn:disabled{opacity:0.4; cursor:not-allowed;}
+.btn-primary{ background:var(--cyan); color:#062227; border-color:var(--cyan);}
+.btn-primary:hover{ box-shadow:0 8px 24px -8px var(--cyan-glow);}
+.btn-primary:disabled{background:#233238; color:var(--text-faint); border-color:var(--border);}
+.btn-amber{ border-color:var(--amber); color:var(--amber);}
+.btn-amber:hover{background:rgba(227,166,61,0.08);}
+.btn-red{ border-color:var(--red); color:var(--red);}
+.btn-red:hover{background:rgba(225,91,82,0.08);}
+.calib-progress{font-family:var(--mono); font-size:13px; color:var(--cyan); min-width:150px;}
+.calib-bar-track{ width:100%; height:5px; background:var(--border-soft); border-radius:3px; margin-top:8px; overflow:hidden;}
+.calib-bar-fill{height:100%; width:0%; background:var(--cyan); box-shadow:0 0 8px 1px var(--cyan-glow); transition:width .18s linear;}
+.origin-established{
+  margin-top:16px; display:none;
+}
+.origin-established.show{display:block;}
+.origin-established .banner{
+  font-family:var(--mono); font-size:12px; letter-spacing:0.16em; color:var(--cyan); margin-bottom:12px;
+}
+.fingerprint-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+@media(max-width:760px){.fingerprint-grid{grid-template-columns:repeat(2,1fr);}}
+.fp-card{ border:1px solid var(--border-soft); border-radius:4px; padding:10px; background:var(--bg-alt);}
+.fp-card .label{font-family:var(--mono); font-size:10px; letter-spacing:0.1em; color:var(--text-dim); margin-bottom:6px;}
+.fp-card canvas{width:100%; height:52px; display:block;}
+.fp-card .val{font-family:var(--mono); font-size:11px; color:var(--cyan); margin-top:4px;}
+
+/* ---------- CONTROLS ---------- */
+.controls-grid{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+@media(max-width:820px){.controls-grid{grid-template-columns:1fr;}}
+.subctrl-title{font-family:var(--mono); font-size:11px; letter-spacing:0.12em; color:var(--text-dim); margin-bottom:10px; text-transform:uppercase;}
+.chip-row{display:flex; gap:8px; flex-wrap:wrap;}
+.chip{
+  padding:9px 14px; border-radius:20px; border:1px solid var(--border); background:var(--panel-2);
+  color:var(--text-dim); font-size:12px; font-family:var(--mono); letter-spacing:0.04em; transition:all .15s ease;
+}
+.chip.active{ border-color:var(--cyan); color:var(--cyan); background:rgba(79,214,232,0.08); box-shadow:0 0 0 1px var(--cyan) inset;}
+.chip.active.deg{border-color:var(--amber); color:var(--amber); box-shadow:0 0 0 1px var(--amber) inset;}
+.chip.active.deg.severe{border-color:var(--red); color:var(--red); box-shadow:0 0 0 1px var(--red) inset;}
+.load-msg{ margin-top:12px; font-size:12px; color:var(--text-faint); font-family:var(--mono); min-height:16px;}
+.load-msg strong{color:var(--cyan); font-weight:600;}
+.event-msg{
+  margin-top:12px; font-size:12px; padding:9px 12px; border-radius:4px; font-family:var(--mono);
+  border:1px solid var(--border); color:var(--text-dim); display:none;
+}
+.event-msg.show{display:block;}
+.event-msg.ok{border-color:rgba(87,207,150,0.4); color:var(--green); background:rgba(87,207,150,0.06);}
+.event-msg.warn{border-color:rgba(227,166,61,0.4); color:var(--amber); background:rgba(227,166,61,0.06);}
+
+/* ---------- IDENTITY DRIFT ---------- */
+.drift-flow{ display:flex; align-items:center; justify-content:center; gap:22px; margin-bottom:18px; flex-wrap:wrap; text-align:center;}
+.flow-node{ font-family:var(--mono); font-size:12px; letter-spacing:0.1em; color:var(--text-dim); padding:10px 16px; border:1px solid var(--border-soft); border-radius:4px; background:var(--bg-alt);}
+.flow-node.hi{color:var(--cyan); border-color:var(--cyan-dim);}
+.flow-arrow{color:var(--text-faint); font-size:18px;}
+.drift-number-wrap{ text-align:center; }
+.drift-number{ font-family:var(--mono); font-size:clamp(48px,8vw,76px); font-weight:700; color:var(--cyan); letter-spacing:0.02em; line-height:1;}
+.drift-number.watch{color:var(--amber);}
+.drift-number.inspect{color:var(--red);}
+.drift-label{font-family:var(--mono); font-size:12px; letter-spacing:0.18em; color:var(--text-dim); margin-top:8px;}
+
+/* ---------- GRAPH ---------- */
+#driftGraph{width:100%; height:260px; display:block; background:var(--bg-alt); border:1px solid var(--border-soft); border-radius:4px;}
+.zone-legend{display:flex; gap:18px; margin-top:10px; flex-wrap:wrap;}
+.zone-legend .item{display:flex; align-items:center; gap:7px; font-size:11px; font-family:var(--mono); color:var(--text-dim);}
+.zone-legend .sw{width:10px;height:10px;border-radius:2px;}
+
+/* ---------- MINI CHARTS ---------- */
+.mini-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+@media(max-width:820px){.mini-grid{grid-template-columns:repeat(2,1fr);}}
+.mini-card{border:1px solid var(--border-soft); border-radius:4px; padding:10px; background:var(--bg-alt);}
+.mini-card .label{font-family:var(--mono); font-size:10px; letter-spacing:0.08em; color:var(--text-dim); display:flex; justify-content:space-between;}
+.mini-card canvas{width:100%; height:70px; margin-top:6px; display:block;}
+.mini-note{font-family:var(--mono); font-size:9.5px; color:var(--text-faint); margin-top:14px; letter-spacing:0.04em; text-align:center;}
+
+/* ---------- GAUGE ---------- */
+.gauge-row{display:flex; align-items:center; justify-content:center; gap:34px; flex-wrap:wrap;}
+.gauge-state{font-family:var(--mono); font-size:12px; letter-spacing:0.14em; color:var(--text-dim); text-align:center;}
+.gauge-state .big{font-size:14px; color:var(--text); margin-top:6px; font-weight:700;}
+.gauge-threshold{font-family:var(--mono); font-size:9.5px; color:var(--text-faint); margin-top:14px; text-align:center;}
+
+/* ---------- PIPELINE ---------- */
+.pipeline{display:flex; align-items:center; gap:6px; overflow-x:auto; padding:6px 2px 12px;}
+.pipe-block{
+  flex:0 0 auto; padding:12px 10px; min-width:104px; text-align:center; border-radius:4px;
+  border:1px solid var(--border-soft); background:var(--bg-alt); font-family:var(--mono); font-size:10px;
+  letter-spacing:0.05em; color:var(--text-faint); transition: all .25s ease; line-height:1.35;
+}
+.pipe-block.lit{ color:var(--cyan); border-color:var(--cyan-dim); background:rgba(79,214,232,0.08); box-shadow:0 0 14px -2px var(--cyan-glow);}
+.pipe-arrow{color:var(--text-faint); font-size:13px; flex:0 0 auto;}
+
+/* ---------- STM32 ---------- */
+.stm-row{display:grid; grid-template-columns:220px 1fr 1fr; gap:16px;}
+@media(max-width:820px){.stm-row{grid-template-columns:1fr;}}
+.stm-box{border:1px solid var(--cyan-dim); border-radius:4px; padding:16px; background:rgba(79,214,232,0.05); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;}
+.stm-box .chip-name{font-family:var(--mono); font-weight:700; font-size:16px; color:var(--cyan); letter-spacing:0.1em;}
+.stm-box .chip-role{font-size:11px; color:var(--text-dim); margin-top:6px;}
+.stm-list{border:1px solid var(--border-soft); border-radius:4px; padding:14px 16px; background:var(--bg-alt);}
+.stm-list .h{font-family:var(--mono); font-size:11px; letter-spacing:0.1em; color:var(--text-dim); margin-bottom:8px;}
+.stm-list ul{margin:0; padding-left:18px; color:var(--text-dim); font-size:12.5px; line-height:1.9;}
+
+/* ---------- COMPARE ---------- */
+.compare-toggle{display:flex; justify-content:center;}
+#compareView{display:none; margin-top:18px;}
+#compareView.show{display:block;}
+.compare-split{display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:stretch;}
+@media(max-width:760px){.compare-split{grid-template-columns:1fr;}}
+.compare-col{border:1px solid var(--border-soft); border-radius:4px; padding:14px; background:var(--bg-alt);}
+.compare-col h4{font-family:var(--mono); font-size:12px; letter-spacing:0.14em; color:var(--text-dim); margin-bottom:10px;}
+.compare-col.today h4{color:var(--cyan);}
+.compare-row{display:flex; justify-content:space-between; font-family:var(--mono); font-size:12px; padding:6px 0; border-bottom:1px dashed var(--border-soft); color:var(--text-dim);}
+.compare-row .v{color:var(--text);}
+.compare-mid{display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;}
+.compare-mid .arrow{font-size:22px; color:var(--cyan);}
+.compare-final{ text-align:center; margin-top:20px; font-size:clamp(16px,2.4vw,22px); font-weight:600; line-height:1.6;}
+.compare-final .l1{color:var(--text-dim);}
+.compare-final .l2{color:var(--cyan);}
+
+/* ---------- DISCLAIMER ---------- */
+.disclaimer{
+  margin-top:20px; padding:14px 18px; border:1px dashed var(--border); border-radius:5px;
+  font-family:var(--mono); font-size:11px; color:var(--text-faint); line-height:1.7; text-align:center;
+}
+</style>
+</head>
+<body>
+
+<!-- ========================= START SCREEN ========================= -->
+<div id="startScreen">
+  <div class="start-mark"><span></span></div>
+  <div class="brand">BELTSENSE</div>
+  <div class="wordmark">ORIGIN PRINT</div>
+  <div class="origin-print-label">Intelligent Conveyor Splice Monitoring</div>
+  <p class="tagline">Smart India Hackathon · SIH26008 — Conveyor Belt Joint Rupture &amp; Damage Monitoring</p>
+  <div class="motto">"EVERY SPLICE <span>LEARNS ITS OWN NORMAL</span>"</div>
+  <button id="startBtn">START SIMULATION</button>
+  <div class="start-foot">This is an illustrative engineering simulation using synthetic sensor data. Thresholds and degradation values are not industrially validated.</div>
+</div>
+
+<!-- ========================= MAIN APP ========================= -->
+<div id="app">
+
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="logo-dot"></div>
+      <div>
+        <div class="topbar-title">BELTSENSE</div>
+        <div class="topbar-sub">ORIGIN PRINT — SIH26008 SPLICE IDENTITY MONITORING SIMULATOR</div>
+      </div>
+    </div>
+    <div id="statusPill" class="status-pill"><div class="dot"></div><span id="statusText">AWAITING ORIGIN PRINT</span></div>
+  </div>
+
+  <!-- CONVEYOR -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Live Conveyor · Sensing Zone</div>
+      <div class="panel-note">Splice recirculates continuously through four sensor modalities</div>
+    </div>
+    <div class="conveyor-wrap">
+      <canvas id="conveyorCanvas" width="1100" height="220"></canvas>
+      <div id="detectFlag" class="detect-flag">◆ SPLICE DETECTED</div>
+      <div class="pass-counter">PASS <span id="passCountLabel">0000</span></div>
+    </div>
+    <div class="sensor-legend">
+      <div class="item"><span class="swatch" style="background:var(--cyan)"></span>📷 Vision</div>
+      <div class="item"><span class="swatch" style="background:var(--amber)"></span>📈 IMU / Vibration</div>
+      <div class="item"><span class="swatch" style="background:#c48ee8"></span>🎙 Acoustic</div>
+      <div class="item"><span class="swatch" style="background:#57cf96"></span>🌡 Temperature</div>
+    </div>
+  </div>
+
+  <!-- CALIBRATION -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Calibration Mode</div>
+      <div class="panel-note" id="calibNote">The Origin Print belongs to this splice, not to every splice.</div>
+    </div>
+    <div class="calib-row">
+      <button id="learnBtn" class="btn btn-primary">LEARN ORIGIN PRINT</button>
+      <div id="calibProgress" class="calib-progress">Not yet calibrated</div>
+    </div>
+    <div class="calib-bar-track"><div id="calibBarFill" class="calib-bar-fill"></div></div>
+
+    <div id="originEstablished" class="origin-established">
+      <div class="banner">◆ ORIGIN PRINT ESTABLISHED</div>
+      <div class="fingerprint-grid">
+        <div class="fp-card"><div class="label">VIBRATION</div><canvas id="fpVibration" width="180" height="52"></canvas><div class="val" id="fpValVibration">—</div></div>
+        <div class="fp-card"><div class="label">ACOUSTIC</div><canvas id="fpAcoustic" width="180" height="52"></canvas><div class="val" id="fpValAcoustic">—</div></div>
+        <div class="fp-card"><div class="label">TEMPERATURE</div><canvas id="fpTemperature" width="180" height="52"></canvas><div class="val" id="fpValTemperature">—</div></div>
+        <div class="fp-card"><div class="label">VISION</div><canvas id="fpVision" width="180" height="52"></canvas><div class="val" id="fpValVision">—</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div class="panel">
+    <div class="controls-grid">
+      <div>
+        <div class="subctrl-title">Operating Condition</div>
+        <div class="chip-row" id="loadChips">
+          <button class="chip" data-load="empty">EMPTY LOAD</button>
+          <button class="chip active" data-load="normal">NORMAL LOAD</button>
+          <button class="chip" data-load="high">HIGH LOAD</button>
+        </div>
+        <div class="load-msg">LOAD-AWARE COMPARISON — <strong>COMPARE LIKE WITH LIKE.</strong></div>
+      </div>
+      <div>
+        <div class="subctrl-title">Introduce Degradation</div>
+        <div class="chip-row" id="degChips">
+          <button class="chip active" data-deg="0">0% HEALTHY</button>
+          <button class="chip deg" data-deg="10">10% MICRO-DRIFT</button>
+          <button class="chip deg" data-deg="25">25% DEVELOPING</button>
+          <button class="chip deg severe" data-deg="50">50% SIGNIFICANT</button>
+          <button class="chip deg severe" data-deg="75">75% SEVERE</button>
+        </div>
+        <div class="load-msg" id="degMsg">Simulation stages, not real damage percentages.</div>
+      </div>
+    </div>
+
+    <div class="controls-grid" style="margin-top:16px;">
+      <div>
+        <div class="subctrl-title">Robustness Checks</div>
+        <div class="chip-row">
+          <button id="transientBtn" class="btn btn-amber">SIMULATE TEMPORARY LOAD CHANGE</button>
+          <button id="noiseBtn" class="btn btn-amber">SIMULATE SENSOR NOISE</button>
+        </div>
+      </div>
+      <div>
+        <div class="subctrl-title">Snapshot Comparison</div>
+        <div class="chip-row"><button id="compareBtn" class="btn">COMPARE DAY 1 vs TODAY</button></div>
+      </div>
+    </div>
+    <div id="eventMsg" class="event-msg"></div>
+  </div>
+
+  <!-- IDENTITY DRIFT -->
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title">Identity Drift</div><div class="panel-note">Multimodal deviation from the stored Origin Print</div></div>
+    <div class="drift-flow">
+      <div class="flow-node hi">ORIGIN PRINT</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node">CURRENT OBSERVATION</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-node hi">IDENTITY DRIFT</div>
+    </div>
+    <div class="drift-number-wrap">
+      <div id="driftNumber" class="drift-number">—</div>
+      <div class="drift-label">IDENTITY DRIFT — DEVIATION FROM ORIGIN PRINT</div>
+    </div>
+  </div>
+
+  <!-- GRAPH -->
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title">Splice Identity Drift Over Time</div><div class="panel-note">X: pass number · Y: deviation from Origin Print</div></div>
+    <canvas id="driftGraph" width="1100" height="260"></canvas>
+    <div class="zone-legend">
+      <div class="item"><span class="sw" style="background:var(--green)"></span>NORMAL</div>
+      <div class="item"><span class="sw" style="background:var(--amber)"></span>WATCH</div>
+      <div class="item"><span class="sw" style="background:var(--red)"></span>INSPECTION RECOMMENDED</div>
+    </div>
+  </div>
+
+  <!-- MULTIMODAL VIEW -->
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title">Multimodal Sensor View</div><div class="panel-note">Illustrative sensor behaviour</div></div>
+    <div class="mini-grid">
+      <div class="mini-card"><div class="label"><span>VIBRATION</span><span id="miniValVibration">—</span></div><canvas id="miniVibration" width="240" height="70"></canvas></div>
+      <div class="mini-card"><div class="label"><span>ACOUSTIC</span><span id="miniValAcoustic">—</span></div><canvas id="miniAcoustic" width="240" height="70"></canvas></div>
+      <div class="mini-card"><div class="label"><span>TEMPERATURE</span><span id="miniValTemperature">—</span></div><canvas id="miniTemperature" width="240" height="70"></canvas></div>
+      <div class="mini-card"><div class="label"><span>VISION</span><span id="miniValVision">—</span></div><canvas id="miniVision" width="240" height="70"></canvas></div>
+    </div>
+    <div class="mini-note">ILLUSTRATIVE SENSOR BEHAVIOUR — response timings are not experimentally validated.</div>
+  </div>
+
+  <!-- HEALTH GAUGE -->
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title">Splice Health</div></div>
+    <div class="gauge-row">
+      <svg id="gaugeSvg" width="200" height="200" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="82" fill="none" stroke="#232a32" stroke-width="14"/>
+        <circle id="gaugeArc" cx="100" cy="100" r="82" fill="none" stroke="var(--cyan)" stroke-width="14"
+          stroke-linecap="round" stroke-dasharray="515.2" stroke-dashoffset="0"
+          transform="rotate(-90 100 100)"/>
+        <text id="gaugeNum" x="100" y="94" text-anchor="middle" font-family="SFMono-Regular, Consolas, monospace" font-size="42" font-weight="700" fill="#e7ecf0">100</text>
+        <text x="100" y="120" text-anchor="middle" font-family="SFMono-Regular, Consolas, monospace" font-size="11" letter-spacing="2" fill="#93a1ad">HEALTH</text>
+      </svg>
+      <div class="gauge-state">
+        SPLICE HEALTH STATE
+        <div class="big" id="gaugeStateLabel">NORMAL</div>
+      </div>
+    </div>
+    <div class="gauge-threshold">SIMULATION THRESHOLD — not a validated industrial limit.</div>
+  </div>
+
+  <!-- PIPELINE -->
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title">System Pipeline</div><div class="panel-note">Lights as data flows through each stage</div></div>
+    <div class="pipeline" id="pipeline"></div>
+  </div>
+
+  <!-- STM32 -->
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title">STM32 — Sensor Acquisition &amp; Synchronisation</div></div>
+    <div class="stm-row">
+      <div class="stm-box">
+        <div class="chip-name">STM32</div>
+        <div class="chip-role">Sensor Acquisition + Synchronisation</div>
+      </div>
+      <div class="stm-list">
+        <div class="h">STM32 RESPONSIBILITIES</div>
+        <ul>
+          <li>Collects sensor readings from all four modalities</li>
+          <li>Timestamps every measurement</li>
+          <li>Synchronises modalities to a shared clock</li>
+          <li>Sends synchronised data to the edge computer</li>
+        </ul>
+      </div>
+      <div class="stm-list">
+        <div class="h">EDGE COMPUTER RESPONSIBILITIES</div>
+        <ul>
+          <li>Signal processing</li>
+          <li>OpenCV vision analysis</li>
+          <li>NumPy / SciPy feature extraction</li>
+          <li>Origin Print generation</li>
+          <li>Multimodal comparison &amp; temporal drift analysis</li>
+          <li>Dashboard visualisation</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPARE DAY 1 vs TODAY -->
+  <div class="panel">
+    <div class="panel-head"><div class="panel-title">Day 1 vs Today</div></div>
+    <div class="compare-toggle"><button id="compareBtn2" class="btn btn-primary">COMPARE DAY 1 vs TODAY</button></div>
+    <div id="compareView">
+      <div class="compare-split">
+        <div class="compare-col"><h4>DAY 1 — ORIGIN</h4><div id="compareDay1"></div></div>
+        <div class="compare-mid"><div class="arrow">⇄</div><div style="font-family:var(--mono); font-size:11px; color:var(--text-dim);">IDENTITY DRIFT</div></div>
+        <div class="compare-col today"><h4>TODAY — CURRENT</h4><div id="compareToday"></div></div>
+      </div>
+      <div class="compare-final">
+        <div class="l1">"WE DON'T DETECT FAILURE."</div>
+        <div class="l2">"WE NOTICE WHEN A SPLICE STOPS BEING ITSELF."</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="disclaimer">This is an illustrative engineering simulation using synthetic sensor data. Thresholds and degradation values are not industrially validated.</div>
+
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const MODALITIES = ["vibration","acoustic","temperature","vision"];
+const COLORS = { vibration:"#e3a63d", acoustic:"#c48ee8", temperature:"#57cf96", vision:"#4fd6e8" };
+
+const state = {
+  started:false,
+  calibrating:false,
+  calibrated:false,
+  passCount:0,
+  calibrationPasses:0,
+  calibrationTarget:16,
+  load:"normal",
+  baselineLoad:"normal",
+  degradationTarget:0,
+  degradationCurrent:0,
+  baseline:null,          // {mod:{mean,std}}
+  personality:{},         // per-splice random center
+  history:[],             // {pass, drift, persistent}
+  rolling:[],
+  transientPassesLeft:0,
+  noisePassesLeft:0,
+  noiseSensor:null,
+  healthScore:100,
+  day1:null,
+  lastReading:null,
+  lastZ:null,
+  readingLog:{vibration:[],acoustic:[],temperature:[],vision:[]},
+  passPeriod:1500,
+  calibPeriod:340,
+};
+
+const loadOffsets = {
+  empty:  {vibration:-0.055, acoustic:-0.045, temperature:-0.010, vision:0},
+  normal: {vibration:0,      acoustic:0,      temperature:0,      vision:0},
+  high:   {vibration:0.075,  acoustic:0.065,  temperature:0.018,  vision:0},
+};
+const degBase = {vibration:0.34, acoustic:0.31, temperature:0.14, vision:0.10};
+const noiseSigma = {vibration:0.014, acoustic:0.015, temperature:0.007, vision:0.010};
+const weights = {vibration:0.30, acoustic:0.30, temperature:0.20, vision:0.20};
+
+function rand(a,b){return a+Math.random()*(b-a);}
+function gauss(sigma){ // Box-Muller
+  let u=0,v=0; while(u===0)u=Math.random(); while(v===0)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v)*sigma;
+}
+function clamp(v,lo,hi){return Math.max(lo,Math.min(hi,v));}
+function avg(arr){return arr.length? arr.reduce((a,b)=>a+b,0)/arr.length : 0;}
+
+// randomize this splice's unique baseline personality
+MODALITIES.forEach(m=>{
+  state.personality[m] = rand(0.35,0.62);
+});
+
+/* ============================================================
+   READING GENERATION
+   ============================================================ */
+function visionDegradationFactor(deg){
+  // vision changes very little early, catches up later (quadratic ramp)
+  return Math.pow(deg/75, 2.1) * degBase.vision;
+}
+function generateReading(){
+  const reading = {};
+  MODALITIES.forEach(m=>{
+    let v = state.personality[m];
+    v += (loadOffsets[state.load][m] || 0);
+    if(m==="vision"){
+      v += visionDegradationFactor(state.degradationCurrent);
+    } else {
+      v += (state.degradationCurrent/75) * degBase[m];
+    }
+    // transient load spike (vibration/acoustic only)
+    if(state.transientPassesLeft>0 && (m==="vibration"||m==="acoustic")){
+      v += loadOffsets.high[m]*0.85;
+    }
+    // sensor noise event
+    let sigma = noiseSigma[m];
+    if(state.noisePassesLeft>0 && state.noiseSensor===m){
+      sigma *= 6.5;
+    }
+    v += gauss(sigma);
+    reading[m] = v;
+  });
+  return reading;
+}
+
+function expectedValue(m, load){
+  if(!state.baseline) return null;
+  const base = state.baseline[m].mean;
+  if(m==="vibration"||m==="acoustic"||m==="temperature"){
+    const delta = (loadOffsets[load][m]||0) - (loadOffsets[state.baselineLoad][m]||0);
+    return base + delta;
+  }
+  return base;
+}
+
+/* ============================================================
+   DOM refs
+   ============================================================ */
+const $ = id=>document.getElementById(id);
+const startScreen = $("startScreen");
+const app = $("app");
+const canvas = $("conveyorCanvas");
+const ctx = canvas.getContext("2d");
+const detectFlag = $("detectFlag");
+const passCountLabel = $("passCountLabel");
+const learnBtn = $("learnBtn");
+const calibProgress = $("calibProgress");
+const calibBarFill = $("calibBarFill");
+const originEstablished = $("originEstablished");
+const driftNumber = $("driftNumber");
+const statusPill = $("statusPill");
+const statusText = $("statusText");
+const degMsg = $("degMsg");
+const eventMsg = $("eventMsg");
+const gaugeArc = $("gaugeArc");
+const gaugeNum = $("gaugeNum");
+const gaugeStateLabel = $("gaugeStateLabel");
+const driftGraphCanvas = $("driftGraph");
+const driftGraphCtx = driftGraphCanvas.getContext("2d");
+
+/* ============================================================
+   START
+   ============================================================ */
+$("startBtn").addEventListener("click", ()=>{
+  startScreen.style.display="none";
+  app.classList.add("visible");
+  state.started = true;
+  requestAnimationFrame(loop);
+});
+
+/* ============================================================
+   CONVEYOR ANIMATION + PASS TRIGGER
+   ============================================================ */
+let beltScroll = 0;
+let prevSpliceX = -999;
+const ZONE_W = 130;
+
+function drawConveyor(ts, spliceX, inZone){
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // background
+  ctx.fillStyle = "#0c0f13";
+  ctx.fillRect(0,0,W,H);
+
+  const beltY = H*0.52, beltH = 64;
+  // belt body
+  ctx.fillStyle = "#20262e";
+  ctx.fillRect(0, beltY-beltH/2, W, beltH);
+  ctx.strokeStyle = "#2f3945"; ctx.lineWidth=1;
+  ctx.strokeRect(0, beltY-beltH/2, W, beltH);
+
+  // scrolling tread marks
+  ctx.strokeStyle = "#333d48"; ctx.lineWidth = 2;
+  const step = 34;
+  for(let x = -step + (beltScroll % step); x < W+step; x+=step){
+    ctx.beginPath();
+    ctx.moveTo(x, beltY-beltH/2+6);
+    ctx.lineTo(x-16, beltY+beltH/2-6);
+    ctx.stroke();
+  }
+  // rollers
+  ctx.fillStyle = "#161b21";
+  [18, W-18].forEach(rx=>{
+    ctx.beginPath(); ctx.arc(rx, beltY, beltH/2+6, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle="#3a424c"; ctx.lineWidth=2; ctx.stroke();
+  });
+
+  // sensing zone
+  const zoneX = W/2 - ZONE_W/2;
+  ctx.save();
+  ctx.setLineDash([6,5]);
+  ctx.strokeStyle = inZone ? "#4fd6e8" : "#3a4552";
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(zoneX, beltY-beltH/2-30, ZONE_W, beltH+60);
+  ctx.restore();
+  if(inZone){
+    ctx.fillStyle = "rgba(79,214,232,0.06)";
+    ctx.fillRect(zoneX, beltY-beltH/2-30, ZONE_W, beltH+60);
+  }
+
+  // sensor icon labels around zone
+  ctx.font = "11px SFMono-Regular, Consolas, monospace";
+  ctx.textAlign="center";
+  ctx.fillStyle = inZone ? "#4fd6e8" : "#5f6b76";
+  ctx.fillText("📷 VISION", W/2, beltY-beltH/2-38);
+  ctx.fillStyle = "#93a1ad";
+  ctx.fillText("📈 IMU", zoneX-6, beltY-14);
+  ctx.textAlign="left";
+  ctx.fillText("🎙 ACOUSTIC", zoneX+ZONE_W+8, beltY-14);
+  ctx.textAlign="center";
+  ctx.fillStyle="#93a1ad";
+  ctx.fillText("🌡 TEMP", W/2, beltY+beltH/2+40);
+
+  // splice marker (only draw if within visible canvas range)
+  if(spliceX > -60 && spliceX < W+60){
+    ctx.save();
+    ctx.translate(spliceX, beltY);
+    const glow = inZone;
+    if(glow){
+      ctx.shadowColor = "#4fd6e8"; ctx.shadowBlur = 18;
+    }
+    ctx.fillStyle = glow ? "#3a4552" : "#2c333c";
+    ctx.strokeStyle = glow ? "#4fd6e8" : "#4c5764";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.rect(-17, -beltH/2+2, 34, beltH-4);
+    ctx.fill(); ctx.stroke();
+    // rivets
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = glow ? "#4fd6e8" : "#6b7682";
+    [-10,-2,6,14].forEach(dy=>{
+      ctx.beginPath(); ctx.arc(-9, dy*2, 2, 0, Math.PI*2); ctx.fill();
+      ctx.beginPath(); ctx.arc(9, dy*2, 2, 0, Math.PI*2); ctx.fill();
+    });
+    // zig-zag splice seam
+    ctx.strokeStyle = glow ? "#4fd6e8" : "#8a95a1";
+    ctx.lineWidth=1.5;
+    ctx.beginPath();
+    ctx.moveTo(0,-beltH/2+4);
+    for(let i=0;i<6;i++){
+      ctx.lineTo(i%2===0? -6:6, -beltH/2+4 + (i+1)*(beltH-8)/6);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+function statusStripStatus(){
+  if(state.healthScore>=80) return "normal";
+  if(state.healthScore>=60) return "watch";
+  return "inspect";
+}
+
+let lastTs = 0;
+function loop(ts){
+  if(!lastTs) lastTs=ts;
+  const dt = ts-lastTs; lastTs=ts;
+  beltScroll += dt*0.05;
+
+  const period = state.calibrating ? state.calibPeriod : state.passPeriod;
+  const W = canvas.width;
+  const travel = W + 140;
+  const phase = (ts % period)/period;
+  const spliceX = phase*travel - 70;
+  const zoneX = W/2 - ZONE_W/2;
+  const inZone = spliceX > zoneX-17 && spliceX < zoneX+ZONE_W+17;
+
+  drawConveyor(ts, spliceX, inZone);
+
+  detectFlag.classList.toggle("on", inZone);
+
+  const zoneCenter = W/2;
+  if(prevSpliceX < zoneCenter && spliceX >= zoneCenter){
+    onPassTrigger();
+  }
+  prevSpliceX = spliceX;
+
+  requestAnimationFrame(loop);
+}
+
+/* ============================================================
+   PASS PROCESSING
+   ============================================================ */
+let calibrationBuffer = [];
+
+function onPassTrigger(){
+  state.passCount++;
+  passCountLabel.textContent = String(state.passCount).padStart(4,"0");
+  pulsePipeline();
+
+  const reading = generateReading();
+  logReading(reading);
+  updateMiniCharts();
+
+  if(state.calibrating){
+    calibrationBuffer.push(reading);
+    state.calibrationPasses++;
+    const n = state.calibrationPasses, tgt = state.calibrationTarget;
+    calibProgress.textContent = `PASS ${String(n).padStart(2,"0")} / ${tgt}`;
+    calibBarFill.style.width = `${(n/tgt)*100}%`;
+    if(n>=tgt){ finishCalibration(); }
+    return;
+  }
+
+  if(!state.calibrated){
+    return; // idle passes before calibration, just visual
+  }
+
+  processPass(reading);
+}
+
+function logReading(reading){
+  state.lastReading = reading;
+  MODALITIES.forEach(m=>{
+    const log = state.readingLog[m];
+    log.push(reading[m]);
+    if(log.length>50) log.shift();
+  });
+}
+
+function processPass(reading){
+  // smooth degradation approach toward target
+  state.degradationCurrent += (state.degradationTarget - state.degradationCurrent)*0.22;
+
+  const z = {};
+  MODALITIES.forEach(m=>{
+    const expected = expectedValue(m, state.load);
+    const std = Math.max(state.baseline[m].std, 0.006);
+    z[m] = Math.abs(reading[m]-expected)/std;
+  });
+
+  let noiseFlag=false, noiseSensorName=null;
+  if(state.noisePassesLeft>0){
+    const vals = MODALITIES.map(m=>z[m]);
+    const maxV = Math.max(...vals);
+    const maxKey = MODALITIES.find(m=>z[m]===maxV);
+    const others = MODALITIES.filter(m=>m!==maxKey).map(m=>z[m]);
+    const othersAvg = avg(others);
+    if(maxV > othersAvg*2.3 && othersAvg < 3.2){
+      noiseFlag = true; noiseSensorName = maxKey;
+      z[maxKey] = z[maxKey]*0.12; // fused system down-weights inconsistent sensor
+    }
+  }
+
+  let raw = 0;
+  MODALITIES.forEach(m=> raw += z[m]*weights[m]);
+  const driftPct = clamp(raw*9.2, 0, 60);
+
+  state.lastZ = z;
+  state.history.push({pass:state.passCount, drift:driftPct});
+  if(state.history.length>60) state.history.shift();
+  state.rolling.push(driftPct);
+  if(state.rolling.length>6) state.rolling.shift();
+  const persistent = avg(state.rolling);
+  state.healthScore = clamp(100 - persistent*3.15, 0, 100);
+
+  updateDriftUI(driftPct, persistent, noiseFlag, noiseSensorName);
+  drawGraph();
+  updateGauge();
+  updateStatusPill();
+
+  // countdown transient/noise events
+  if(state.transientPassesLeft>0){
+    state.transientPassesLeft--;
+    if(state.transientPassesLeft===0){
+      showEvent("TRANSIENT CHANGE — NO PERSISTENT DRIFT. Readings returned to expected baseline.", "ok");
+    }
+  }
+  if(state.noisePassesLeft>0){
+    state.noisePassesLeft--;
+    if(noiseFlag){
+      showEvent(`SENSOR INCONSISTENCY DETECTED — ${noiseSensorName.toUpperCase()} disagrees with other modalities. Not classified as belt failure.`, "warn");
+    }
+    if(state.noisePassesLeft===0){
+      state.noiseSensor=null;
+    }
+  }
+}
+
+function updateDriftUI(driftPct, persistent, noiseFlag, noiseSensorName){
+  driftNumber.textContent = persistent.toFixed(1)+"%";
+  driftNumber.classList.remove("watch","inspect");
+  const zone = zoneFor(persistent);
+  if(zone==="watch") driftNumber.classList.add("watch");
+  if(zone==="inspect") driftNumber.classList.add("inspect");
+}
+
+function zoneFor(persistent){
+  if(persistent < 8) return "normal";
+  if(persistent < 18) return "watch";
+  return "inspect";
+}
+
+function updateStatusPill(){
+  const zone = zoneFor(avg(state.rolling));
+  statusPill.classList.remove("normal","watch","inspect");
+  statusPill.classList.add(zone);
+  if(zone==="normal") statusText.textContent = "NORMAL";
+  else if(zone==="watch") statusText.textContent = "WATCH";
+  else statusText.textContent = "INSPECTION RECOMMENDED";
+  updateFinalPanel(zone);
+}
+
+function updateFinalPanel(zone){
+  if(zone==="inspect"){
+    if(!eventMsg.classList.contains("show") || !eventMsg.textContent.includes("RECOMMENDED ACTION")){
+      showEvent("Persistent identity drift detected. Multimodal deviation is increasing across consecutive passes. RECOMMENDED ACTION — inspect splice during planned maintenance window.", "warn");
+    }
+  }
+}
+
+function showEvent(text, kind){
+  eventMsg.textContent = text;
+  eventMsg.className = "event-msg show " + (kind||"");
+  clearTimeout(showEvent._t);
+  showEvent._t = setTimeout(()=>{ eventMsg.classList.remove("show"); }, 6500);
+}
+
+/* ============================================================
+   CALIBRATION
+   ============================================================ */
+learnBtn.addEventListener("click", ()=>{
+  if(state.calibrating) return;
+  state.calibrating = true;
+  state.calibrated = false;
+  state.calibrationPasses = 0;
+  calibrationBuffer = [];
+  originEstablished.classList.remove("show");
+  learnBtn.disabled = true;
+  learnBtn.textContent = "CALIBRATING…";
+  calibProgress.textContent = "PASS 00 / "+state.calibrationTarget;
+  calibBarFill.style.width = "0%";
+  state.baselineLoad = state.load;
+});
+
+function finishCalibration(){
+  state.calibrating = false;
+  learnBtn.disabled = false;
+  learnBtn.textContent = "RE-LEARN ORIGIN PRINT";
+
+  const baseline = {};
+  MODALITIES.forEach(m=>{
+    const vals = calibrationBuffer.map(r=>r[m]);
+    const mean = avg(vals);
+    const variance = avg(vals.map(v=>(v-mean)*(v-mean)));
+    const std = Math.sqrt(variance) || 0.01;
+    baseline[m] = {mean, std, samples:vals.slice()};
+  });
+  state.baseline = baseline;
+  state.calibrated = true;
+  state.day1 = { reading: Object.assign({}, calibrationBuffer[calibrationBuffer.length-1]), pass: state.passCount };
+
+  calibProgress.textContent = `ORIGIN PRINT ESTABLISHED (n=${state.calibrationTarget})`;
+  originEstablished.classList.add("show");
+  drawFingerprints();
+  statusText.textContent = "NORMAL";
+  statusPill.classList.add("normal");
+  state.rolling = [0];
+  state.healthScore = 100;
+  updateGauge();
+}
+
+function drawFingerprints(){
+  MODALITIES.forEach(m=>{
+    const c = $("fp"+cap(m));
+    const cx = c.getContext("2d");
+    const W=c.width, H=c.height;
+    cx.clearRect(0,0,W,H);
+    const samples = state.baseline[m].samples;
+    const mn = Math.min(...samples), mx = Math.max(...samples);
+    const range = (mx-mn)||0.01;
+    const bins = 14;
+    const counts = new Array(bins).fill(0);
+    samples.forEach(v=>{
+      let idx = Math.floor(((v-mn)/range)*bins);
+      idx = clamp(idx,0,bins-1);
+      counts[idx]++;
+    });
+    const maxCount = Math.max(...counts,1);
+    const bw = W/bins;
+    cx.fillStyle = COLORS[m];
+    counts.forEach((c2,i)=>{
+      const h = (c2/maxCount)*(H-6);
+      cx.globalAlpha = 0.85;
+      cx.fillRect(i*bw+1, H-h, bw-2, h);
+    });
+    cx.globalAlpha=1;
+    $("fpVal"+cap(m)).textContent = `μ ${state.baseline[m].mean.toFixed(3)} · σ ${state.baseline[m].std.toFixed(3)}`;
+  });
+}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+
+/* ============================================================
+   LOAD / DEGRADATION CONTROLS
+   ============================================================ */
+document.querySelectorAll("#loadChips .chip").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("#loadChips .chip").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    state.load = btn.dataset.load;
+    showEvent(`OPERATING CONDITION CHANGED → ${btn.dataset.load.toUpperCase()} LOAD. COMPARE LIKE WITH LIKE — no alarm from load change alone.`, "ok");
+  });
+});
+
+document.querySelectorAll("#degChips .chip").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll("#degChips .chip").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    state.degradationTarget = parseFloat(btn.dataset.deg);
+    degMsg.textContent = `Target stage: ${btn.textContent.trim()} — simulation stage, not a real damage percentage.`;
+  });
+});
+
+$("transientBtn").addEventListener("click", ()=>{
+  if(!state.calibrated){ showEvent("Learn the Origin Print first.", "warn"); return; }
+  state.transientPassesLeft = 3;
+  showEvent("Operating condition changed (temporary). Watching for persistence before raising any alarm…", "warn");
+});
+
+$("noiseBtn").addEventListener("click", ()=>{
+  if(!state.calibrated){ showEvent("Learn the Origin Print first.", "warn"); return; }
+  state.noisePassesLeft = 3;
+  state.noiseSensor = MODALITIES[Math.floor(Math.random()*MODALITIES.length)];
+  showEvent(`Injecting noise into ${state.noiseSensor.toUpperCase()} sensor for a few passes…`, "warn");
+});
+
+/* ============================================================
+   GRAPH
+   ============================================================ */
+function drawGraph(){
+  const c = driftGraphCanvas, cx = driftGraphCtx;
+  const W=c.width, H=c.height;
+  cx.clearRect(0,0,W,H);
+  const padL=40, padR=14, padT=14, padB=26;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const maxY = 60;
+
+  function yFor(v){ return padT + plotH - (v/maxY)*plotH; }
+
+  // zone bands
+  const zones = [
+    {from:0, to:8, color:"rgba(87,207,150,0.10)"},
+    {from:8, to:18, color:"rgba(227,166,61,0.10)"},
+    {from:18, to:maxY, color:"rgba(225,91,82,0.10)"},
+  ];
+  zones.forEach(z=>{
+    cx.fillStyle=z.color;
+    cx.fillRect(padL, yFor(z.to), plotW, yFor(z.from)-yFor(z.to));
+  });
+
+  // gridlines + labels
+  cx.strokeStyle="#232a32"; cx.lineWidth=1;
+  cx.font="10px SFMono-Regular, Consolas, monospace"; cx.fillStyle="#5f6b76";
+  [0,10,20,30,40,50,60].forEach(v=>{
+    const y=yFor(v);
+    cx.beginPath(); cx.moveTo(padL,y); cx.lineTo(W-padR,y); cx.stroke();
+    cx.fillText(v+"%", 4, y+3);
+  });
+
+  const data = state.history;
+  if(data.length<2){
+    cx.fillStyle="#5f6b76"; cx.font="12px SFMono-Regular, Consolas, monospace";
+    cx.fillText("AWAITING ORIGIN PRINT AND LIVE PASSES…", padL+10, padT+plotH/2);
+    return;
+  }
+  const xMin = data[0].pass, xMax = data[data.length-1].pass;
+  const xRange = Math.max(1, xMax-xMin);
+  function xFor(p){ return padL + ((p-xMin)/xRange)*plotW; }
+
+  // raw drift (thin)
+  cx.beginPath();
+  data.forEach((d,i)=>{
+    const x=xFor(d.pass), y=yFor(d.drift);
+    if(i===0) cx.moveTo(x,y); else cx.lineTo(x,y);
+  });
+  cx.strokeStyle="rgba(79,214,232,0.35)"; cx.lineWidth=1;
+  cx.stroke();
+
+  // persistent rolling curve (bold)
+  const rollWin=6;
+  cx.beginPath();
+  data.forEach((d,i)=>{
+    const from = Math.max(0,i-rollWin+1);
+    const windowVals = data.slice(from,i+1).map(x2=>x2.drift);
+    const p = avg(windowVals);
+    const x=xFor(d.pass), y=yFor(p);
+    if(i===0) cx.moveTo(x,y); else cx.lineTo(x,y);
+  });
+  cx.strokeStyle="#4fd6e8"; cx.lineWidth=2.4;
+  cx.shadowColor="#4fd6e8"; cx.shadowBlur=6;
+  cx.stroke();
+  cx.shadowBlur=0;
+
+  // x label
+  cx.fillStyle="#5f6b76"; cx.font="10px SFMono-Regular, Consolas, monospace";
+  cx.fillText("PASS NUMBER →", W-padR-90, H-6);
+}
+
+/* ============================================================
+   MINI CHARTS
+   ============================================================ */
+function updateMiniCharts(){
+  MODALITIES.forEach(m=>{
+    const c = $("mini"+cap(m));
+    const cx = c.getContext("2d");
+    const W=c.width,H=c.height;
+    cx.clearRect(0,0,W,H);
+    const log = state.readingLog[m];
+    if(log.length<2) return;
+    const mn = Math.min(...log), mx=Math.max(...log);
+    const range = (mx-mn)||0.01;
+    cx.beginPath();
+    log.forEach((v,i)=>{
+      const x = (i/(log.length-1))*W;
+      const y = H - ((v-mn)/range)*(H-8) - 4;
+      if(i===0) cx.moveTo(x,y); else cx.lineTo(x,y);
+    });
+    cx.strokeStyle = COLORS[m]; cx.lineWidth=1.8;
+    cx.shadowColor=COLORS[m]; cx.shadowBlur=4;
+    cx.stroke();
+    cx.shadowBlur=0;
+    $("miniVal"+cap(m)).textContent = log[log.length-1].toFixed(3);
+  });
+}
+
+/* ============================================================
+   GAUGE
+   ============================================================ */
+const CIRC = 2*Math.PI*82;
+function updateGauge(){
+  const h = state.healthScore;
+  gaugeNum.textContent = Math.round(h);
+  const offset = CIRC*(1-h/100);
+  gaugeArc.setAttribute("stroke-dashoffset", offset.toFixed(1));
+  let color = "#4fd6e8", label="NORMAL";
+  if(h<60){ color="#e15b52"; label="INSPECTION RECOMMENDED"; }
+  else if(h<80){ color="#e3a63d"; label="WATCH"; }
+  gaugeArc.setAttribute("stroke", color);
+  gaugeNum.setAttribute("fill", color);
+  gaugeStateLabel.textContent = label;
+  gaugeStateLabel.style.color = color;
+}
+
+/* ============================================================
+   PIPELINE
+   ============================================================ */
+const pipelineStages = ["SENSORS","STM32","TIMESTAMP +\nSYNC","FEATURE\nEXTRACTION","ORIGIN\nPRINT","MULTIMODAL\nDEVIATION","TEMPORAL\nDRIFT","HEALTH\nSCORE","INSPECTION\nRECOMMENDATION"];
+const pipelineEl = $("pipeline");
+pipelineStages.forEach((s,i)=>{
+  const b = document.createElement("div");
+  b.className="pipe-block";
+  b.id="pipe-"+i;
+  b.style.whiteSpace="pre-line";
+  b.textContent = s;
+  pipelineEl.appendChild(b);
+  if(i<pipelineStages.length-1){
+    const a = document.createElement("div");
+    a.className="pipe-arrow"; a.textContent="→";
+    pipelineEl.appendChild(a);
+  }
+});
+let pulseTimer=null;
+function pulsePipeline(){
+  clearTimeout(pulseTimer);
+  let i=0;
+  const blocks = pipelineStages.map((_,idx)=>$("pipe-"+idx));
+  blocks.forEach(b=>b.classList.remove("lit"));
+  function step(){
+    if(i>0) blocks[i-1].classList.remove("lit");
+    if(i<blocks.length){
+      blocks[i].classList.add("lit");
+      i++;
+      pulseTimer = setTimeout(step, 90);
+    } else {
+      setTimeout(()=>blocks[blocks.length-1].classList.remove("lit"),160);
+    }
+  }
+  step();
+}
+
+/* ============================================================
+   COMPARE DAY 1 vs TODAY
+   ============================================================ */
+function renderCompare(){
+  const view = $("compareView");
+  if(!state.calibrated || !state.lastReading){
+    showEvent("Learn the Origin Print and let a few passes run first.", "warn");
+    return;
+  }
+  view.classList.toggle("show");
+  if(!view.classList.contains("show")) return;
+
+  const day1 = $("compareDay1"), today = $("compareToday");
+  day1.innerHTML=""; today.innerHTML="";
+  MODALITIES.forEach(m=>{
+    const d1v = state.baseline[m].mean;
+    const tv = state.lastReading[m];
+    const diffPct = (((tv-d1v)/(Math.abs(d1v)||0.01))*100);
+    const row1 = document.createElement("div");
+    row1.className="compare-row";
+    row1.innerHTML = `<span>${m.toUpperCase()}</span><span class="v">${d1v.toFixed(3)}</span>`;
+    day1.appendChild(row1);
+    const row2 = document.createElement("div");
+    row2.className="compare-row";
+    const sign = diffPct>=0?"+":"";
+    row2.innerHTML = `<span>${m.toUpperCase()}</span><span class="v">${tv.toFixed(3)} (${sign}${diffPct.toFixed(1)}%)</span>`;
+    today.appendChild(row2);
+  });
+}
+$("compareBtn").addEventListener("click", renderCompare);
+$("compareBtn2").addEventListener("click", renderCompare);
+
+/* ============================================================
+   INIT
+   ============================================================ */
+updateGauge();
+drawGraph();
+
+})();
+</script>
+</body>
+</html>
